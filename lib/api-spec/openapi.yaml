@@ -1,0 +1,175 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Buddy Learning App API - PDF upload and AI quiz generation
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: pdf
+    description: PDF upload and text extraction
+  - name: quiz
+    description: AI-powered quiz generation
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /upload-pdf:
+    post:
+      operationId: uploadPdf
+      tags: [pdf]
+      summary: Upload a PDF file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: PDF processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadPdfResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /generate-quiz:
+    post:
+      operationId: generateQuiz
+      tags: [quiz]
+      summary: Generate quiz questions and hangman words
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateQuizRequest"
+      responses:
+        "200":
+          description: Quiz generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateQuizResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    UploadPdfResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        filename:
+          type: string
+        size:
+          type: number
+        extractedText:
+          type: string
+      required: [message, filename, size, extractedText]
+
+    GenerateQuizRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Extracted PDF text content
+        difficulty:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 1
+          description: Difficulty level (1=easiest, 10=hardest)
+      required: [text]
+
+    QuizQuestion:
+      type: object
+      properties:
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+          minItems: 4
+          maxItems: 4
+        answer:
+          type: string
+      required: [question, options, answer]
+
+    HangmanWord:
+      type: object
+      properties:
+        word:
+          type: string
+        hint:
+          type: string
+      required: [word, hint]
+
+    GenerateQuizResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizQuestion"
+        hangmanWords:
+          type: array
+          items:
+            $ref: "#/components/schemas/HangmanWord"
+      required: [questions, hangmanWords]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
